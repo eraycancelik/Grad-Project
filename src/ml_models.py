@@ -4,6 +4,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from sklearn.preprocessing import StandardScaler
+# pyrefly: ignore [missing-import]
 import xgboost as xgb
 from src.config import REFRIGERANT_CODES
 

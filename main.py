@@ -7,7 +7,8 @@ from src.validation import validate_model
 from src.analysis import compare_refrigerants, parametric_scan, find_optimal_conditions
 from src.visualization import (plot_ph_diagram, plot_gwp_cop_comparison, 
                            plot_exergy_destruction, plot_cop_vs_tevap, 
-                           plot_cop_heatmap, plot_ml_results)
+                           plot_cop_heatmap, plot_cop_heatmap2, plot_cop_heatmap3, 
+                           plot_cop_heatmap4, plot_cop_heatmap5, plot_ml_results)
 from src.ml_models import train_ml_models, feature_importance_analysis
 from src.report import print_summary_report
 
@@ -60,6 +61,18 @@ def main():
     # ── H. COP ısı haritası (R290) ──────────────────────────────────────────
     plot_cop_heatmap(df, refrigerant='R290',
                      save_path='output/cop_heatmap_R290.png')
+    
+    plot_cop_heatmap2(df, refrigerant='R1234yf',
+                     save_path='output/cop_heatmap_R1234yf.png')
+
+    plot_cop_heatmap3(df, refrigerant='R744',
+                     save_path='output/cop_heatmap_R744.png')
+
+    plot_cop_heatmap4(df, refrigerant='R600a',
+                     save_path='output/cop_heatmap_R600a.png')
+
+    plot_cop_heatmap5(df, refrigerant='R134a',
+                     save_path='output/cop_heatmap_R134a.png')
 
     # ── I. Makine Öğrenmesi — COP tahmini ───────────────────────────────────
     print("\n  COP için ML modelleri eğitiliyor...")

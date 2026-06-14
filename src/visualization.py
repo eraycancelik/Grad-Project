@@ -148,6 +148,164 @@ def plot_cop_heatmap(df, refrigerant='R290', save_path=None):
         print(f"  Grafik kaydedildi: {save_path}")
     plt.show()
 
+def plot_cop_heatmap2(df, refrigerant='R1234yf', save_path=None):
+    """COP ısı haritası: Tev vs Tcond (belirli bir akışkan için)"""
+    sub = df[(df['refrigerant'] == refrigerant) &
+             (df['superheat'] == 7) &
+             (df['subcooling'] == 5)]
+
+    pivot = sub.pivot_table(values='COP', index='T_evap', columns='T_cond')
+
+    fig, ax = plt.subplots(figsize=(10, 7))
+    im = ax.imshow(pivot.values, aspect='auto', origin='lower',
+                   cmap='RdYlGn', interpolation='bilinear')
+
+    ax.set_xticks(range(len(pivot.columns)))
+    ax.set_yticks(range(len(pivot.index)))
+    ax.set_xticklabels([f'{c:.0f}' for c in pivot.columns], fontsize=9)
+    ax.set_yticklabels([f'{i:.0f}' for i in pivot.index], fontsize=9)
+
+    ax.set_xlabel('Kondensasyon Sıcaklığı [°C]', fontsize=11)
+    ax.set_ylabel('Evaporasyon Sıcaklığı [°C]', fontsize=11)
+    ax.set_title(f'{REFRIGERANTS[refrigerant]["label"]} — COP Isı Haritası',
+                 fontsize=12, fontweight='bold')
+
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('COP [-]', fontsize=10)
+
+    # Değerleri hücrelere yaz
+    for i in range(len(pivot.index)):
+        for j in range(len(pivot.columns)):
+            val = pivot.values[i, j]
+            if not np.isnan(val):
+                ax.text(j, i, f'{val:.2f}', ha='center', va='center',
+                        fontsize=7, color='black')
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight', dpi=150)
+        print(f"  Grafik kaydedildi: {save_path}")
+    plt.show()
+
+def plot_cop_heatmap3(df, refrigerant='R744', save_path=None):
+    """COP ısı haritası: Tev vs Tcond (belirli bir akışkan için)"""
+    sub = df[(df['refrigerant'] == refrigerant) &
+             (df['superheat'] == 7) &
+             (df['subcooling'] == 5)]
+
+    pivot = sub.pivot_table(values='COP', index='T_evap', columns='T_cond')
+
+    fig, ax = plt.subplots(figsize=(10, 7))
+    im = ax.imshow(pivot.values, aspect='auto', origin='lower',
+                   cmap='RdYlGn', interpolation='bilinear')
+
+    ax.set_xticks(range(len(pivot.columns)))
+    ax.set_yticks(range(len(pivot.index)))
+    ax.set_xticklabels([f'{c:.0f}' for c in pivot.columns], fontsize=9)
+    ax.set_yticklabels([f'{i:.0f}' for i in pivot.index], fontsize=9)
+
+    ax.set_xlabel('Kondensasyon Sıcaklığı [°C]', fontsize=11)
+    ax.set_ylabel('Evaporasyon Sıcaklığı [°C]', fontsize=11)
+    ax.set_title(f'{REFRIGERANTS[refrigerant]["label"]} — COP Isı Haritası',
+                 fontsize=12, fontweight='bold')
+
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('COP [-]', fontsize=10)
+
+    # Değerleri hücrelere yaz
+    for i in range(len(pivot.index)):
+        for j in range(len(pivot.columns)):
+            val = pivot.values[i, j]
+            if not np.isnan(val):
+                ax.text(j, i, f'{val:.2f}', ha='center', va='center',
+                        fontsize=7, color='black')
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight', dpi=150)
+        print(f"  Grafik kaydedildi: {save_path}")
+    plt.show()
+
+def plot_cop_heatmap4(df, refrigerant='R600a', save_path=None):
+    """COP ısı haritası: Tev vs Tcond (belirli bir akışkan için)"""
+    sub = df[(df['refrigerant'] == refrigerant) &
+             (df['superheat'] == 7) &
+             (df['subcooling'] == 5)]
+
+    pivot = sub.pivot_table(values='COP', index='T_evap', columns='T_cond')
+
+    fig, ax = plt.subplots(figsize=(10, 7))
+    im = ax.imshow(pivot.values, aspect='auto', origin='lower',
+                   cmap='RdYlGn', interpolation='bilinear')
+
+    ax.set_xticks(range(len(pivot.columns)))
+    ax.set_yticks(range(len(pivot.index)))
+    ax.set_xticklabels([f'{c:.0f}' for c in pivot.columns], fontsize=9)
+    ax.set_yticklabels([f'{i:.0f}' for i in pivot.index], fontsize=9)
+
+    ax.set_xlabel('Kondensasyon Sıcaklığı [°C]', fontsize=11)
+    ax.set_ylabel('Evaporasyon Sıcaklığı [°C]', fontsize=11)
+    ax.set_title(f'{REFRIGERANTS[refrigerant]["label"]} — COP Isı Haritası',
+                 fontsize=12, fontweight='bold')
+
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('COP [-]', fontsize=10)
+
+    # Değerleri hücrelere yaz
+    for i in range(len(pivot.index)):
+        for j in range(len(pivot.columns)):
+            val = pivot.values[i, j]
+            if not np.isnan(val):
+                ax.text(j, i, f'{val:.2f}', ha='center', va='center',
+                        fontsize=7, color='black')
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight', dpi=150)
+        print(f"  Grafik kaydedildi: {save_path}")
+    plt.show()
+
+
+def plot_cop_heatmap5(df, refrigerant='R134a', save_path=None):
+    """COP ısı haritası: Tev vs Tcond (belirli bir akışkan için)"""
+    sub = df[(df['refrigerant'] == refrigerant) &
+             (df['superheat'] == 7) &
+             (df['subcooling'] == 5)]
+
+    pivot = sub.pivot_table(values='COP', index='T_evap', columns='T_cond')
+
+    fig, ax = plt.subplots(figsize=(10, 7))
+    im = ax.imshow(pivot.values, aspect='auto', origin='lower',
+                   cmap='RdYlGn', interpolation='bilinear')
+
+    ax.set_xticks(range(len(pivot.columns)))
+    ax.set_yticks(range(len(pivot.index)))
+    ax.set_xticklabels([f'{c:.0f}' for c in pivot.columns], fontsize=9)
+    ax.set_yticklabels([f'{i:.0f}' for i in pivot.index], fontsize=9)
+
+    ax.set_xlabel('Kondensasyon Sıcaklığı [°C]', fontsize=11)
+    ax.set_ylabel('Evaporasyon Sıcaklığı [°C]', fontsize=11)
+    ax.set_title(f'{REFRIGERANTS[refrigerant]["label"]} — COP Isı Haritası',
+                 fontsize=12, fontweight='bold')
+
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('COP [-]', fontsize=10)
+
+    # Değerleri hücrelere yaz
+    for i in range(len(pivot.index)):
+        for j in range(len(pivot.columns)):
+            val = pivot.values[i, j]
+            if not np.isnan(val):
+                ax.text(j, i, f'{val:.2f}', ha='center', va='center',
+                        fontsize=7, color='black')
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight', dpi=150)
+        print(f"  Grafik kaydedildi: {save_path}")
+    plt.show()
+
+
 
 def plot_gwp_cop_comparison(ref_results, save_path=None):
     """GWP vs COP baloncuk grafiği"""
@@ -185,6 +343,7 @@ def plot_gwp_cop_comparison(ref_results, save_path=None):
         print(f"  Grafik kaydedildi: {save_path}")
     plt.show()
 
+    
 
 def plot_ph_diagram(refrigerant, T_evap_C=-3, T_cond_C=45,
                     superheat=7, subcooling=5, save_path=None):
