@@ -26,7 +26,7 @@ def validate_model():
 
     for ref in ['R134a', 'R1234yf', 'R290', 'R744']:
         r = vapor_compression_cycle(ref, -3, 45, superheat=7, subcooling=5,
-                                    eta_isentropic=0.85)
+                                    eta_isentropic=0.5)
         results[ref] = r
 
         ref_cop  = ref_values[ref]['COP']

@@ -11,7 +11,7 @@ def is_transcritical(fluid, T_cond_C):
 
 def vapor_compression_cycle(refrigerant, T_evap_C, T_cond_C,
                              superheat=7.0, subcooling=5.0,
-                             eta_isentropic=0.85,
+                             eta_isentropic=0.50,
                              T0_C=25.0, P0=101325.0):
     """
     Buhar sıkıştırmalı soğutma çevrimi analizi.
