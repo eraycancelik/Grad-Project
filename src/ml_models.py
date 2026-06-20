@@ -1,105 +1,145 @@
+"""
+ml_models_v2.py  —  Düzeltilmiş ML eğitimi
+
+Değişiklik: R744 (transkritik) ayrı model olarak eğitiliyor.
+Sebep: R744 transkritik çevrimde çalışır, diğer 4 akışkandan
+termodinamik olarak temelden farklıdır. Birlikte eğitildiğinde
+çapraz doğrulama skoru (CV_R²) ciddi biçimde bozulmaktadır.
+
+Çözüm: 
+  - Subkritik model  : R134a, R290, R1234yf, R600a
+  - Transkritik model: R744
+Her iki model aynı hiperparametrelerle eğitilir.
+"""
+
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
-from sklearn.preprocessing import StandardScaler
-# pyrefly: ignore [missing-import]
+from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
-from src.config import REFRIGERANT_CODES
+
+# ─────────────────────────────────────────────────────────────────────
+# ENCODE
+# ─────────────────────────────────────────────────────────────────────
 
 def encode_refrigerant(df):
-    """Akışkan adını sayısal koda çevir."""
     df = df.copy()
-    df['ref_code'] = df['refrigerant'].map(REFRIGERANT_CODES)
-    return df
+    le = LabelEncoder()
+    df['ref_code'] = le.fit_transform(df['refrigerant'])
+    return df, le
+
+
+# ─────────────────────────────────────────────────────────────────────
+# ANA EĞİTİM FONKSİYONU
+# ─────────────────────────────────────────────────────────────────────
 
 def train_ml_models(df, target='COP'):
     """
-    COP veya ekserji verimi tahmini için ML modelleri eğit.
-    Makale 4 (Yıldırım 2025) ve Makale 5 (Tue & An 2026)'ya göre.
-    """
-    print(f"\n{'═'*60}")
-    print(f"  MAKİNE ÖĞRENMESİ — Hedef: {target}")
-    print(f"{'═'*60}")
+    Subkritik (R134a/R290/R1234yf/R600a) ve transkritik (R744)
+    akışkanlar için ayrı ML modelleri eğitir.
 
-    df = encode_refrigerant(df)
+    Dönüş:
+        results_sub  : subkritik modellerin sonuçları
+        results_r744 : R744 modelinin sonuçları
+        feature_cols : girdi özellikleri
+        le           : LabelEncoder
+    """
+    print(f"\n{'═'*65}")
+    print(f"  MAKİNE ÖĞRENMESİ — Hedef: {target}")
+    print(f"  [Subkritik: R134a/R290/R1234yf/R600a | Transkritik: R744]")
+    print(f"{'═'*65}")
+
+    df, le = encode_refrigerant(df)
+
+    # Veri ayrımı
+    df_sub  = df[df['transcritical'] == 0].copy()
+    df_r744 = df[df['transcritical'] == 1].copy()
 
     feature_cols = ['ref_code', 'T_evap', 'T_cond', 'superheat', 'subcooling']
-    X = df[feature_cols].values
-    y = df[target].values
 
-    # %80 eğitim / %20 test
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42)
-
-    scaler = StandardScaler()
-    X_train_sc = scaler.fit_transform(X_train)
-    X_test_sc  = scaler.transform(X_test)
-
-    models = {
-        'Random Forest':   RandomForestRegressor(
-                               n_estimators=200, max_depth=12,
-                               random_state=42, n_jobs=-1),
-        'XGBoost':         xgb.XGBRegressor(
-                               n_estimators=300, max_depth=8,
-                               learning_rate=0.05, subsample=0.8,
-                               random_state=42, verbosity=0),
-        'Gradient Boost':  GradientBoostingRegressor(
-                               n_estimators=200, max_depth=6,
-                               learning_rate=0.05, random_state=42),
-    }
-
-    results = {}
-    print(f"\n  {'Model':<20} {'R²':>8} {'MAE':>10} {'RMSE':>10} {'CV_R²':>10}")
-    print("  " + "─"*58)
-
-    best_model = None
-    best_r2    = -np.inf
-
-    for name, model in models.items():
-        # XGBoost ham feature kullanır (ölçekleme gerekmez)
-        if 'XGB' in name:
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-            cv_scores = cross_val_score(model, X, y, cv=5, scoring='r2')
-        else:
-            model.fit(X_train_sc, y_train)
-            y_pred = model.predict(X_test_sc)
-            cv_scores = cross_val_score(
-                model, scaler.transform(X), y, cv=5, scoring='r2')
-
-        r2   = r2_score(y_test, y_pred)
-        mae  = mean_absolute_error(y_test, y_pred)
-        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-        cv_r2 = cv_scores.mean()
-
-        results[name] = {
-            'model': model, 'scaler': scaler if 'XGB' not in name else None,
-            'r2': r2, 'mae': mae, 'rmse': rmse, 'cv_r2': cv_r2,
-            'y_test': y_test, 'y_pred': y_pred,
+    def _get_models():
+        return {
+            'Random Forest':  RandomForestRegressor(
+                                  n_estimators=200, max_depth=12,
+                                  random_state=42, n_jobs=-1),
+            'XGBoost':        xgb.XGBRegressor(
+                                  n_estimators=300, max_depth=8,
+                                  learning_rate=0.05, subsample=0.8,
+                                  random_state=42, verbosity=0),
+            'Gradient Boost': GradientBoostingRegressor(
+                                  n_estimators=200, max_depth=6,
+                                  learning_rate=0.05, random_state=42),
         }
-        print(f"  {name:<20} {r2:>8.4f} {mae:>10.4f} {rmse:>10.4f} {cv_r2:>10.4f}")
 
-        if r2 > best_r2:
-            best_r2    = r2
-            best_model = name
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
 
-    print(f"\n  ✓ En iyi model: {best_model} (R² = {best_r2:.4f})")
-    return results, feature_cols, scaler, best_model
+    def _train_group(data, label):
+        X = data[feature_cols].values
+        y = data[target].values
+        X_tr, X_te, y_tr, y_te = train_test_split(
+            X, y, test_size=0.2, random_state=42)
+
+        results = {}
+        print(f"\n  [{label}]")
+        print(f"  {'Model':<20} {'R²':>8} {'MAE':>10} {'RMSE':>10} {'CV_R²':>10}")
+        print("  " + "─"*60)
+
+        best_name, best_r2 = None, -np.inf
+
+        for name, model in _get_models().items():
+            model.fit(X_tr, y_tr)
+            y_pred = model.predict(X_te)
+            cv     = cross_val_score(model, X, y, cv=kf, scoring='r2')
+
+            r2   = r2_score(y_te, y_pred)
+            mae  = mean_absolute_error(y_te, y_pred)
+            rmse = np.sqrt(mean_squared_error(y_te, y_pred))
+            cv_r2 = cv.mean()
+
+            results[name] = {
+                'model': model, 'r2': r2, 'mae': mae,
+                'rmse': rmse, 'cv_r2': cv_r2,
+                'y_test': y_te, 'y_pred': y_pred,
+                'feature_importances': (model.feature_importances_
+                                        if hasattr(model, 'feature_importances_')
+                                        else None),
+            }
+            print(f"  {name:<20} {r2:>8.4f} {mae:>10.4f} {rmse:>10.4f} {cv_r2:>10.4f}")
+
+            if r2 > best_r2:
+                best_r2, best_name = r2, name
+
+        print(f"\n  ✓ En iyi model: {best_name} (R²={best_r2:.4f})")
+        return results
+
+    results_sub  = _train_group(df_sub,  "SUBKRİTİK — R134a / R290 / R1234yf / R600a")
+    results_r744 = _train_group(df_r744, "TRANSKRİTİK — R744 (CO₂)")
+
+    return results_sub, results_r744, feature_cols, le
 
 
-def feature_importance_analysis(ml_results, feature_cols, target):
-    """Feature importance — hangi parametre COP'u en çok etkiliyor?"""
+# ─────────────────────────────────────────────────────────────────────
+# ÖZELLİK ÖNEMİ
+# ─────────────────────────────────────────────────────────────────────
+
+def feature_importance_analysis(results_sub, results_r744,
+                                  feature_cols, target):
     feature_names = ['Akışkan', 'T_evap', 'T_cond', 'Süper Isıtma', 'Alt Soğutma']
+
     print(f"\n  Özellik Önemi ({target} için):")
-    print("  " + "─"*40)
-    for name, res in ml_results.items():
-        model = res['model']
-        if hasattr(model, 'feature_importances_'):
-            imps = model.feature_importances_
-            print(f"\n  [{name}]")
+    print("  " + "─"*45)
+
+    for group_label, results in [("Subkritik", results_sub),
+                                   ("R744",      results_r744)]:
+        print(f"\n  [{group_label}]")
+        for name, res in results.items():
+            if res['feature_importances'] is None:
+                continue
+            imps = res['feature_importances']
+            print(f"\n    {name}:")
             for feat, imp in sorted(zip(feature_names, imps),
                                     key=lambda x: -x[1]):
                 bar = "█" * int(imp * 40)
-                print(f"  {feat:<16} {imp:.3f} {bar}")
+                print(f"    {feat:<16} {imp:.3f} {bar}")

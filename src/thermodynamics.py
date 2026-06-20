@@ -45,8 +45,10 @@ def vapor_compression_cycle(refrigerant, T_evap_C, T_cond_C,
     P_evap = CP.PropsSI('P', 'T', T_evap, 'Q', 1, refrigerant)
 
     if transcritical:
-        # R744 transkritik: gaz soğutucu basıncı (Kim et al. 2009)
-        P_cond = (1.938 * T_cond_C + 9.872) * 1e5  # bar → Pa
+        # Sarkar et al. (2004)
+        T_gc_out = T_cond_C - subcooling
+        P_opt = 2.778 * T_gc_out - 9.44   # [bar]
+        P_cond = P_opt * 1e5
     else:
         P_cond = CP.PropsSI('P', 'T', T_cond, 'Q', 0, refrigerant)
 
@@ -100,7 +102,7 @@ def vapor_compression_cycle(refrigerant, T_evap_C, T_cond_C,
     # Ekserji yıkımları [J/kg]
     ex_dest_comp = (ex1 - ex2) + w_comp                          # Denklem 23
     ex_dest_cond = (ex2 - ex3) - q_cond * (1 - T0 / T_ref)      # Denklem 24
-    ex_dest_evap = (ex4 - ex1) + q_evap * (1 - T0 / T_evap)     # Denklem 25
+    ex_dest_evap = (ex1 - ex4) + q_evap * (1 - T0 / T_evap)     # Denklem 25
     ex_dest_exp  = ex3 - ex4                                      # Denklem 26
     ex_dest_total = ex_dest_comp + ex_dest_cond + ex_dest_evap + ex_dest_exp
 
